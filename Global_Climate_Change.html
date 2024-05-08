@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Viticultural Climate Zones</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.8.2/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.8.2/mapbox-gl.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Raleway&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Raleway', sans-serif;
+            font-size: 12px;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 20px;
+            line-height: 30px;
+        }
+
+        h2 {
+            font-size: 14px;
+            line-height: 20px;
+            margin-bottom: 10px;
+        }
+
+        h3 {
+            font-size: 10px;
+            line-height: 10px;
+        }
+
+/* // 选择链接元素,设置颜色并移除链接的下划线 */
+        a {
+            text-decoration: none;
+            color: #ce4947;
+        }
+
+        #console {
+            position: absolute;
+            width: 15%;
+            margin: 10px;
+            padding: 10px 10px;
+            background-color: white;
+            opacity: 0.8;
+        }
+		
+/* 控制台中每个部分的相隔距离 */
+        .session {
+            margin-bottom: 20px;
+        }
+
+/* 暂时还不知story是在控制什么 */
+        .story {
+            scrollbar-width: auto;
+            background-color: #F5F5F5;
+            border: 1px solid #DDDDDD;
+            border-radius: 4px 0 4px 0;
+            max-height: 260px;
+            margin-bottom: 20px;
+            overflow: scroll;
+            overflow-x: hidden;
+            padding: 5px 5px 5px;
+        }
+
+/* 温度指示条 */
+        .row {
+            height: 12px;
+            width: 100%;
+        }
+
+/* 年份滑块 */
+        .slider {
+            height: 12px;
+            width: 100%;
+            outline: none;
+            opacity: 0.8;
+            -webkit-transition: .2s;
+            transition: opacity .2s;
+        }
+
+/* 鼠标悬停在滑块上时会将不透明度调为1 */
+        .slider:hover {
+            opacity: 1;
+        }
+		
+/* 温度条渐变色 */
+        .colors {
+            background: linear-gradient(to right, #3a48b4, #2cbebb, #fafd1d, #fdb130, #fd6d3b, #fd1d1d);
+            margin-bottom: 5px;
+        }
+
+/* 温度条下方的温度文字 */
+        .label {
+            width: 15%;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .mapboxgl-popup {
+            max-width: 400px;
+            font: 12px/20px 'Raleway', sans-serif;
+            background-color: white;
+            opacity: 0.8;
+        }
+
+        .button {
+            text-align: center;
+            font: 10px;
+            background: #669EC4;
+            border-radius: 3px;
+            padding: 3px;
+            width: 90px;
+            min-height: 35px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+    <div id="console">
+        <div class="session">
+            <h2>Mean temperature</h2>
+            <h3>(North: Apr-Oct / South: Oct-Apr)</h3>
+            <div class="row colors"></div>
+            <div class="row labels">
+                <div class="label">12</div>
+                <div class="label">14</div>
+                <div class="label">16</div>
+                <div class="label">18</div>
+                <div class="label">20</div>
+                <div class="label">22(°C)</div>
+            </div>
+        </div>
+        <div class="session">
+            <h2>Year <label id="year">2000</label></h2>
+            <input id="slider" class="slider" type="range" min="1900" max="2017" step="1" value="2000" />
+        </div>
+        <div class="session">
+            <h2>Animation</h2>
+            <!-- Initially, we had a radio button group for controlling animation. This is deprecated now. -->
+            <!-- <div class="row" id="animation">
+                <input id="animation_on" type="radio" name="toggle" value="animation_on" checked="checked" />
+                <label for="animation_on">On</label>
+                <input id="animation_off" type="radio" name="toggle" value="animation_off" />
+                <label for="animation_off">Off</label>
+            </div> --><div class="session">
+            <button id="animationButton" class="button" value="animation_off">&#x23F8;&#xFE0E;Pause</button>
+            <button id="flyButton" class="button">&#x2139;&#xFE0E; New York</button>
+        </div>
+    </div>
+
+
+
+        <p>
+            Data derived from:
+            <a href="https://psl.noaa.gov/data/gridded/data.UDel_AirT_Precip.html">University of Delaware Air
+                Temperature & Precipitation (Dec 2017)</a>
+        </p>
+        <!-- DEBUG        
+        <div class="session">
+                <h2>Zoom <label id="zoom">1</label></h2>
+        </div> 
+-->
+    </div>
+    <script>
+
+        // We are going to start from the year 2000 and switch the animation on
+        var year = 2000;
+        var animation = 'animation_on';
+
+		// 定义动画间隔时间的常量
+        // Timer milliseconds between frames
+        const frameLength = 350;
+        // Global timer
+        var timer = null;
+
+        // Our dataset brings info from 1900 to 2017 for now
+        const yearMin = 1900;
+        const yearMax = 2017;
+
+        // agelanyi's mapbox token
+        mapboxgl.accessToken = 'pk.eyJ1IjoiY2FiYmFnZWppZWppZWppZSIsImEiOiJjbHJocXByeDYwMjRrMmxwYXhyc2NodWdrIn0.2QC3fK8n30O0xTrDRc3x-g';
+
+        // Our map and initial style definition
+        const map = new mapboxgl.Map({
+            container: 'map',
+            // Picking the mapbox light theme for now
+            style: 'mapbox://styles/cabbagejiejiejie/clvuvw16s00u901pc648j7zpx',
+            center: [-0, 5],
+            zoom: 2.1,
+			scrollZoom: false, // 这里禁用了鼠标缩放功能
+            // Starting projection
+            projection: 'naturalEarth' 
+        });
+
+
+        // On load, all these things are going to happen...
+        map.on('load', () => {
+
+            // Add a source and layer for lines on 30, 50 and -30, -50 deg latitudes
+            map.addSource('ranges', {
+                'type': 'geojson',
+                // An in-line geojson describing these latitudes
+                'data': {
+                    'type': 'Feature',
+                    'properties': {},
+                    'geometry': {
+                        'type': 'MultiLineString',
+                        'coordinates': [
+							[
+							    [-180.0, 0],
+							    [180, 0]
+							],
+                            [
+                                [-180.0, 30],
+                                [180, 30]
+                            ],
+                            [
+                                [-180.0, 50.0],
+                                [180, 50.0]
+                            ],
+                            [
+                                [-180.0, -30.0],
+                                [180, -30.0]
+                            ],
+                            [
+                                [-180.0, -50.0],
+                                [180, -50.0]
+                            ]
+                        ]
+                    }
+                }
+            });
+			// 用于显示上面添加的纬度线
+            map.addLayer({
+                'id': 'ranges',
+                'type': 'line',
+                'source': 'ranges',
+                'layout': {
+                    'line-join': 'round',
+                    'line-cap': 'round'
+                },
+                'paint': {
+                    'line-color': '#888',
+                    'line-width': 1,
+                    'line-opacity': 0.5
+                }
+            });
+
+            // Our main layer for the temperature indicators
+            map.addSource('temperature', { type: 'geojson', data: getDataFile() });
+            map.addLayer({
+                id: 'temperature',
+                type: 'circle',
+                source: 'temperature',
+                paint: {
+                    // The radius of the markers are going to change when zooming in, this is to provide
+                    // better visibility
+                    'circle-radius': {
+                        'base': 2,
+                        'stops': [
+                            [2, 2],
+                            [4, 4],
+                            [6, 20],
+                            [10, 180]
+                        ]
+                    },
+                    // Our color scheme is matching the one defined in the HTML's CSS
+                    // Linear steps between the ranges
+                    'circle-color': [
+                        'interpolate',
+                        ['linear'],
+                        ['number', ['get', 'air_temp']],
+                        10,
+                        '#3a48b4',
+                        12,
+                        '#2cbebb',
+                        14,
+                        '#fafd1d',
+                        16,
+                        '#fdb130',
+                        18,
+                        '#fd6d3b',
+                        20,
+                        '#fd1d1d'
+                    ],
+                    'circle-opacity': 0.7
+                }
+            });
+
+            // Creating a popup. A simple one, with no navigation and control buttons.
+            const popup = new mapboxgl.Popup({
+                closeButton: false,
+                closeOnClick: false
+            });
+
+            // Adding the popup and filling it with temperature details when hovering over a valid marker
+            map.on('mouseenter', 'temperature', (e) => {
+                // Changing the cursor style
+                map.getCanvas().style.cursor = 'pointer';
+
+                // Setting the coordinates and the content of the popup
+                const coordinates = e.features[0].geometry.coordinates.slice();
+                const description = `<strong>Mean temperature in ${e.features[0].properties.year}</strong>
+                <p>Temperature: <em>${e.features[0].properties.air_temp} °C</em><br/>
+                   Location: <em>${e.features[0].geometry.coordinates[1].toFixed(2)}°, ${e.features[0].geometry.coordinates[0].toFixed(2)}°</em>
+                </p>`
+
+                // As per : https://docs.mapbox.com/mapbox-gl-js/example/popup-on-hover/
+                // Ensure that if the map is zoomed out such that multiple
+                // copies of the feature are visible, the popup appears
+                // over the copy being pointed to.
+                while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+                    coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+                }
+
+                // Populate the popup and set its coordinates
+                popup.setLngLat(coordinates).setHTML(description).addTo(map);
+            });
+
+            // When leaving the marker, let's remove the popup
+            map.on('mouseleave', 'temperature', () => {
+                map.getCanvas().style.cursor = '';
+                popup.remove();
+            });
+
+            // Add zoom and rotation controls to the map.
+            map.addControl(new mapboxgl.NavigationControl());
+
+            // // DEBUG
+            // map.on('zoom', () => {
+            //     let zoomLevel = map.getZoom();
+            //     console.log("Zoom level: " + zoomLevel);
+            //     document.getElementById('zoom').innerText = zoomLevel;
+            // });
+
+            // Setting a timer and starting the animation
+
+            // UPDATE: do not start animation for now, wait for visibility of the frame (IntersectObserver event)
+            //timer = setInterval(updateMap, frameLength);
+
+            // Update the dataset to the selected year when the slider is moved
+            document.getElementById('slider').addEventListener('input', (event) => {
+                year = parseInt(event.target.value);
+
+                console.log("Slider updated to year: " + year);
+
+                // Updating the map
+                //console.log("Fetching: " + getDataFile());
+                map.getSource('temperature').setData(getDataFile());
+
+                // Updating the year element of the UI
+                document.getElementById('year').innerText = year;
+
+            });
+
+            // Initially, we had a radio button group for controlling animation. This is deprecated now.
+            // A listener for the toggles: switching the animation on or off
+            // document
+            //     .getElementById('animation')
+            //     .addEventListener('change', (event) => {
+            //         const animation = event.target.value;
+            //         // update the map filter
+
+            //         if (animation === 'animation_on') {
+            //             timer = setInterval(updateMap, 400);
+            //             window.setInterval(timer);
+            //         } else if (animation === 'animation_off') {
+            //             window.clearInterval(timer);
+            //         }
+            //     });
+
+            // Handling events of the Animation Button
+            document.getElementById('animationButton').addEventListener('click', function () {
+                animation = event.target.value;
+
+                if (animation == 'animation_on') {
+                    // console.log("================= STARTING ANIMATION =================" + " Animation value: " + animation);
+                    if(!timer) {
+                        timer = setInterval(updateMap, frameLength);
+                        window.setInterval(timer);
+                    }
+                    document.getElementById('animationButton').innerText = "\u23F8\uFE0EPause";
+                    document.getElementById('animationButton').value = "animation_off";
+                } else if (animation == 'animation_off') {
+                    // console.log("================= STOPPING ANIMATION =================" + " Animation value: "+ animation);
+                    if (timer) {
+                        window.clearInterval(timer);
+                        timer = null;
+                    }
+                    document.getElementById('animationButton').innerText = "\u23F5\uFE0EPlay";
+                    document.getElementById('animationButton').value = "animation_on";
+                }
+            });
+
+            // Preparing the Fly-in settings and storing intermediate coordinates
+            var idx = 0;
+            var center = [
+                [-74.0, 40.7],
+                [0, 5]
+            ]
+            var zoom = [
+                6.3,
+                2.1
+            ]
+            var pitch = [
+                [40],
+                [0]
+            ]
+            // Handling events of the Fly-in Button
+            document.getElementById('flyButton').addEventListener('click', function () {
+                // Updating the text on te button, adding unicode pictograms
+                if (idx % 2 == 0) {
+                    document.getElementById('flyButton').innerText = "\u2139\uFE0E Global";
+                } else {
+                    document.getElementById('flyButton').innerText = "\u2139\uFE0E New York";
+
+                }
+                // Back to the first coordinate.
+                if (idx >= center.length) {
+                    idx = 0;
+                }
+                // Fly to the selected coordinates
+                map.flyTo({
+                    center: center[idx],
+                    zoom: zoom[idx],
+                    pitch: pitch[idx]
+                });
+                idx++;
+            });
+
+        });
+
+        // The following variables and functions are implementing a naiive approach
+        // towards prefetching. In case the animation is playing, the next year's
+        // dataset will be downloaded before the actual frame. It is not changing 
+        // things drastically, but can smoothen out frame blocks from time to time.
+
+        // Temporary storage of the data in memory and the prefetched year number
+        let nextDataPayload = "";
+        let nextDataYear = 0;
+
+        // Getting the data file string
+        function getDataFile() {
+            return `data/mean_temp_${year}.geojson`;
+        }
+
+        // A function to prefetch data in an async manner (should speed things up a bit)
+        async function prefetchData(prefetchYear) {
+            let response = await fetch(`data/mean_temp_${prefetchYear}.geojson`);
+            let data = await response.json();
+            nextDataPayload = data;
+            nextDataYear = prefetchYear;
+            console.log("[Prefetch] Received dataset for year " + nextDataYear);
+        }
+
+        // This function is used to update the map automatically or on a slider move,
+        // called by the event listener on the control
+        function updateMap() {
+            if (year < yearMax + 1) {
+                // Update slider text and move the slider to the right location
+                document.getElementById('year').innerText = year;
+                document.getElementById('slider').value = year;
+
+                // In case we have an updated prefetched year that matches the current one
+                // we could assume that there is a data object already on memory and we do not have
+                // to pull it from the network. It is a simple assumption, but should work in
+                // our case.
+                if (nextDataYear === year) {
+                    console.log("[Prefetch] Using pre-fetched dataset for " + year);
+                    map.getSource('temperature').setData(nextDataPayload);
+                } else {
+                    // Otherwise, let's simply just load the data from the remote location
+                    console.log("Fetching and setting the dataset for year " + year);
+                    map.getSource('temperature').setData(getDataFile());
+                }
+
+                // trying to prefetch the next dataset and execute it asynchronously
+                if (year < yearMax) {
+                    console.log(`[Prefetch] Asking for year : ${year + 1}`);
+                    prefetchData(year + 1);
+                }
+
+                // jumping to the next year
+                year++;
+
+            } else {
+                // Restarting at 1900 once we got to the yearMax
+                year = yearMin;
+            }
+        }
+
+        // Adding an intersection observer to control the animation based on visibility of our map
+        // this is to make sure that we are not using resources when the container is not visible
+        // Based on: https://developer.mozilla.org/en-US/docs/Web/API/Intersection_Observer_API
+        let mapElement;
+        window.addEventListener("load", (event) => {
+            mapElement = document.querySelector("#map");
+            createObserver();
+        }, false);
+
+        // This function created the observer
+        function createObserver() {
+            let observer;
+
+            let options = {
+                root: null,
+                rootMargin: "0px",
+                threshold: [0.0, 0.1, 0.5, 0.9, 1.0] // A simple set of thresholds, perhaps a even too many of them
+            };
+
+            // Add the handler to the observer
+            observer = new IntersectionObserver(handleIntersect, options);
+            observer.observe(mapElement);
+        }
+
+        // Function called on any intersect event as per the thresholds defined.
+        function handleIntersect(entries, observer) {
+            entries.forEach((entry) => {
+                // console.log("[handleIntersect] on: " + entry.id + " intersectRatio: " + entry.intersectionRatio);
+
+                if (entry.intersectionRatio < 0.05) {
+                    console.log("02-Global-Viticultural-Climate-Zones map is not visible, stopping animation if needed, ratio: " + entry.intersectionRatio);
+                    // If animation is off, we do not need to do anything
+                    if (animation == 'animation_on') {
+                        // Just removing the timer and stopping animation temporarily,
+                        // Once the window is re-focused, we can start it
+                        if (timer) {
+                            window.clearInterval(timer);
+                            timer = null;
+                        }
+                    }
+                } else {
+                    console.log("02-Global-Viticultural-Climate-Zones map is visible, enabling animation if needed, ratio: " + entry.intersectionRatio);
+                    // If animation is off, we do not need to do anything
+                    if (animation == 'animation_on') {
+                        // Again, not changing tha animation global setting,
+                        // just enabling animations again as we have gained focus and visibility
+                        if (!timer) {
+                            timer = setInterval(updateMap, frameLength);
+                            window.setInterval(timer);
+                        }
+                    }          
+                }
+            });
+        }
+
+    </script>
+
+</body>
+
+</html>

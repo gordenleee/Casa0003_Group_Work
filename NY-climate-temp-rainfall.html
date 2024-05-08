@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <title>NYC Climate, Temperature and Rainfall</title>
+  <!-- Include the ECharts library -->
+  <script src="echarts.js"></script>
+</head>
+
+<body>
+  <!-- Prepare a DOM with a defined width and height for ECharts -->
+  <div id="climate" style="width: 95vw;height:40vh; padding: 0;"></div>
+  <div id="tempAndRainfall" style="width: 95vw;height:50vh;padding: 0;"></div>
+  <script type="text/javascript">
+
+    // Inline data
+    let years = [1950, 1951, 1952, 1953, 1954, 1955, 1956, 1957, 1958, 1959, 1960, 1961,
+      1962, 1963, 1964, 1965, 1966, 1967, 1968, 1969, 1970, 1971, 1972,
+      1973, 1974, 1975, 1976, 1977, 1978, 1979, 1980, 1981, 1982, 1983,
+      1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994,
+      1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005,
+      2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016,
+      2017, 2018, 2019, 2020, 2021, 2022, 2023];
+    let temperatureUK = [11.95, 12.72, 13.16, 13.76, 12.74, 12.87, 12.18,
+	13.04, 11.43, 12.89, 12.19, 12.20, 11.46, 11.69, 12.42, 12.51, 12.56,  
+	11.56, 11.86, 11.82, 12.20, 12.42, 11.09, 12.07, 11.70, 11.79, 11.68,
+	11.30, 10.79, 11.16, 11.57, 11.77, 11.23, 11.92, 11.67, 12.02, 12.08,
+	12.26, 11.51, 10.92, 12.63, 13.22, 11.26, 11.98, 12.22, 12.19, 11.85,
+	12.78, 14.09, 13.64, 12.47, 13.59, 13.65, 12.04, 12.59, 13.19, 14.43,
+	13.59, 13.31, 12.39, 14.09, 13.41, 14.42, 12.98, 12.21, 13.37, 14.55, 
+	14.02, 13.62, 13.24, 14.51, 14.37, 13.68, 14.44];
+    let precipitationUK = [1055.9, 1234.2, 1353.8, 1110.5, 938.5, 1030.0,
+	1073.4, 891.0, 1154.9, 1008.6, 1129.5, 1152.4, 1037.6, 749.8, 848.9, 662.7,
+	961.6, 1117.9, 937.0, 1065.5, 873.5, 1289.6, 1266.4, 1175.8, 894.5, 1337.3,
+	893.8, 1218.4, 1356.6, 1424.9, 978.2, 890.0, 1030.7, 1663.7, 1498.9, 947.2,
+	1167.1, 1156.5, 1105.2, 1371.3, 1328.4, 1111.5, 933.2, 1079.8, 1201.9, 956.8,
+	1475.0, 1075.7, 1104.1, 1136.7, 1101.1, 798.6 , 1101.6, 1430.8, 1228.6, 1121.2,
+	1274.1, 1384.0, 1240.3, 1217.4, 1104.1, 1775.7, 923.3, 1090.7, 1253.0, 990.1,
+	975.6, 1206.2, 1510.5, 1487.4, 1198.4, 1418.6, 1030.0, 1371.1];
+      let temperatureDiffUK = [-0.63, 0.15, 0.59, 1.19, 0.17, 0.30, -0.39, 
+	  0.47, -1.14, 0.32, -0.38, -0.37, -1.11, -0.88, -0.16, -0.06, -0.01, 
+	  -1.01, -0.71, -0.75, -0.37, -0.15, -1.48, -0.50, -0.87, -0.78, -0.89,
+	  -1.27, -1.78, -1.41, -1.00, - 0.80, - 1.34, -0.65, -0.90, -0.55, -0.49,
+	  -0.31, -1.06, -1.65, 0.06, 0.64, -1.31, -0.59, -0.35, -0.38, -0.72,
+	  0.21, 1.52, 1.07, -0.11, 1.02, 1.08, -0.53, 0.02, 0.62, 1.86,
+	  1.02, 0.74, -0.18, 1.52, 0.84, 1.85, 0.41, -0.36, 0.80, 1.98,
+	  1.45, 1.05, 0.67, 1.94, 1.80, 1.11, 1.87];
+
+    // Initialize the echarts instance based on the prepared dom
+
+    var chartTempAndRainfall = echarts.init(document.getElementById('tempAndRainfall'));
+    var chartClimate = echarts.init(document.getElementById('climate'));
+
+    var optionTempAndRainfall = {
+      title: {
+        text: 'Mean temperature (°C) and rainfall (mm)',
+        left: 'center'
+      },
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          animation: false
+        }
+      },
+      toolbox: {
+        show: false,
+        feature: {
+          dataZoom: {
+            yAxisIndex: 'none'
+          },
+          restore: {},
+          saveAsImage: {}
+        }
+      },
+      axisPointer: {
+        link: [
+          {
+            xAxisIndex: 'all'
+          }
+        ]
+      },
+      dataZoom: [
+        {
+          show: true,
+          realtime: true,
+          start: 27,
+          end: 100,
+          backgroundColor: 'rgba(139, 136, 182, 0.3)',
+          fillerColor: 'rgba(139, 136, 182, 0.1)',
+          xAxisIndex: [0, 1]
+        },
+        {
+          type: 'inside',
+          realtime: true,
+          start: 27,
+          end: 100,
+          xAxisIndex: [0, 1]
+        }
+      ],
+      grid: [
+        {
+          height: '27%'
+                },
+        {
+          top: '55%',
+          height: '27%'
+        }
+      ],
+      xAxis: [
+        {
+          type: 'category',
+          boundaryGap: false,
+          axisLine: { onZero: true },
+          data: years,
+          show: true,
+          position: 'top'
+        }
+        ,
+        {
+          gridIndex: 1,
+          type: 'category',
+          boundaryGap: false,
+          axisLine: { onZero: true },
+          data: years,
+          position: 'top',
+          show: false
+        }
+      ],
+      yAxis: [
+        {
+          name: '',
+          type: 'value',
+          axisLabel : {
+          formatter: '{value} °C'
+          },
+          min: 10,
+          max: 15
+        },
+        {
+          gridIndex: 1,
+          name: '',
+          type: 'value',
+          axisLabel : {
+          formatter: '{value} mm'
+          },
+          nameLocation: 'middle',
+          min: 0,
+          inverse: true
+        }
+      ],
+      series: [
+        {
+          name: 'Temperature (°C)',
+          type: 'line',
+          smooth: true,
+          symbolSize: 8,
+          // prettier-ignore
+          data: temperatureUK,
+          markLine: {
+            symbol: "none",
+            data: [{
+              symbol: 'none',
+              type: 'min',
+              lineStyle: {
+                opacity: 0.3,
+                type: 'dashed',
+              }
+            }, {
+              symbol: 'none',
+              type: 'max',
+              lineStyle: {
+                opacity: 0.3,
+                type: 'dashed',
+              }
+            }]
+          },
+          areaStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              {
+                offset: 0,
+                color: '#AA5E79'
+              },
+              {
+                offset: 0.15,
+                color: '#AA5E79'
+              },
+              {
+                offset: 1,
+                color: '#3BB3C3'
+              }])
+          }
+        },
+        {
+          name: 'Rainfall (mm)',
+          type: 'bar',
+          color: '#8B88B6',
+          xAxisIndex: 1,
+          yAxisIndex: 1,
+          symbolSize: 8,
+          // prettier-ignore
+          data: precipitationUK,
+          markLine: {
+            symbol: "none",
+            data: [{
+              symbol: 'none',
+              type: 'min',
+              lineStyle: {
+                opacity: 0.3,
+                type: 'dashed',
+              }
+            }, {
+              symbol: 'none',
+              type: 'max',
+              lineStyle: {
+                opacity: 0.3,
+                type: 'dashed',
+              }
+            }]
+          }
+        }
+      ]
+    };
+
+    // Climate chart options
+    var optionClimate = {
+      title: {
+        text: 'NewYork, USA (1950-2023)\nDifference from from average surface temperature (°C)',
+        subText: 'UK Wide',
+        left: 'center'
+      },
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          animation: false
+        }
+      },
+      toolbox: {
+        show: false,
+        feature: {
+          dataZoom: {
+            yAxisIndex: 'none'
+          },
+          restore: {},
+          saveAsImage: {}
+        }
+      },
+      axisPointer: {
+        link: [
+          {
+            xAxisIndex: 'all'
+          }
+        ]
+      },
+
+      xAxis: [
+        {
+          type: 'category',
+          boundaryGap: false,
+          axisLine: { onZero: true },
+          data: years,
+          show: true
+        }
+      ],
+      yAxis: [
+        {
+          type: 'value',
+          axisLabel : {
+          formatter: '{value}°C'
+          },
+          min: -1.5,
+          max: 1.5
+        }
+      ],
+      series: [
+        {
+          name: 'Temperature difference',
+          type: 'bar',
+          smooth: true,
+          symbolSize: 8,
+          // prettier-ignore
+          data: temperatureDiffUK,
+          markLine: {
+            symbol: "none",
+            data: [{
+              type: 'min',
+              lineStyle: {
+                opacity: 0.3,
+                type: 'dashed',
+                color: '#3BB3C3'
+              }
+            }, {
+              symbol: 'none',
+              type: 'max',
+              color: '#AA5E79',
+              lineStyle: {
+                opacity: 0.3,
+                type: 'dashed',
+                color: '#AA5E79'
+              }
+            }]
+          }
+        }
+      ],
+
+      visualMap: {
+        show: false,
+        left: 'right',
+        min: -0.5,
+        max: 0.5,
+        inRange: {
+          color: ['#3BB3C3', '#AA5E79']
+        },
+        text: ['>0', '<0'],
+        calculable: true
+      }
+    };
+
+    // Display the chart using the configuration items and data just specified.
+    chartClimate.setOption(optionClimate);
+
+    // Display the chart using the configuration items and data just specified.
+    chartTempAndRainfall.setOption(optionTempAndRainfall);
+  </script>
+</body>
+
+</html>

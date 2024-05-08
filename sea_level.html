@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Interactive Map Slider</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.8.2/mapbox-gl.css" rel="stylesheet" />
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.8.2/mapbox-gl.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+        body * {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        .map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+        #legend {
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Center buttons vertically */
+            gap: 10px; /* Space between buttons */
+        }
+        
+        .legend-btn {
+            border: none;
+            border-radius: 50%;
+            color: white;
+            padding: 5px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            cursor: pointer;
+            width: 40px; /* Adjusted size */
+            height: 40px; /* Adjusted size */
+            line-height: 30px; /* Center text vertically */
+        }
+        
+        .legend-btn.active {
+            box-shadow: 0 0 5px 2px rgba(0,0,0,0.5);
+        }
+
+    </style>
+</head>
+<body>
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-compare/v0.4.0/mapbox-gl-compare.js"></script>
+    <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-compare/v0.4.0/mapbox-gl-compare.css" type="text/css" />
+    <div id="comparison-container">
+        <div id="before" class="map"></div>
+        <div id="after" class="map"></div>
+    </div>
+    <div id="legend" style="position: absolute; top: 10px; left: 50px; z-index: 1000;">
+        <div class="legend-entry">
+            <button id="btn2020s" class="legend-btn active" style="background-color: #638c63;">50s</button>
+            <label for="btn2020s" style="color: white;">Sea Level Rise Maps (2050s)</label>
+        </div>
+        <div class="legend-entry">
+            <button id="btn2050s" class="legend-btn" style="background-color: #93c793;">80s</button>
+            <label for="btn2050s" style="color: white;">Sea Level Rise Maps (2080s)</label>
+        </div>
+    </div>
+    <script>
+        mapboxgl.accessToken = "pk.eyJ1IjoiZ29yZGVuLWxlZSIsImEiOiJjbHQ1eDdxaWcwNWxxMmpwZGRyZTAzaHlxIn0.LXeoPI0OYkZFy0vwmyLyYQ";
+        const beforeMap = new mapboxgl.Map({
+            container: "before",
+            style: "mapbox://styles/mapbox/satellite-v9",
+            center: [-74.0, 40.7],
+            zoom: 11,
+        });
+
+        const afterMap = new mapboxgl.Map({
+            container: "after",
+            style: "mapbox://styles/mapbox/dark-v10",
+            center: [-74.0, 40.7],
+            zoom: 11,
+        });
+
+        afterMap.on('load', function() {
+            afterMap.addSource('flood-2020s', {
+                type: 'geojson',
+                data: 'data/Sea Level Rise Maps (2020s 100-year Floodplain).geojson'
+            });
+
+            afterMap.addLayer({
+                id: 'flood-2020s-layer',
+                type: 'fill',
+                source: 'flood-2020s',
+                paint: {
+                    'fill-color': '#638c63',
+                    'fill-opacity': 0.5
+                }
+            });
+
+            afterMap.addSource('flood-2050s', {
+                type: 'geojson',
+                data: 'data/Sea Level Rise Maps (2050s 500-year Floodplain).geojson'
+            });
+
+            afterMap.addLayer({
+                id: 'flood-2050s-layer',
+                type: 'fill',
+                source: 'flood-2050s',
+                layout: {'visibility': 'none'},
+                paint: {
+                    'fill-color': '#93c793',
+                    'fill-opacity': 0.5
+                }
+            });
+
+            document.getElementById('btn2020s').addEventListener('click', function() {
+                afterMap.setLayoutProperty('flood-2050s-layer', 'visibility', 'none');
+                afterMap.setLayoutProperty('flood-2020s-layer', 'visibility', 'visible');
+                this.classList.add('active');
+                document.getElementById('btn2050s').classList.remove('active');
+            });
+            
+            document.getElementById('btn2050s').addEventListener('click', function() {
+                afterMap.setLayoutProperty('flood-2020s-layer', 'visibility', 'none');
+                afterMap.setLayoutProperty('flood-2050s-layer', 'visibility', 'visible');
+                this.classList.add('active');
+                document.getElementById('btn2020s').classList.remove('active');
+            });
+        });
+
+        const container = "#comparison-container";
+        const compare = new mapboxgl.Compare(beforeMap, afterMap, container);
+        beforeMap.addControl(new mapboxgl.NavigationControl());
+        afterMap.addControl(new mapboxgl.NavigationControl());
+    </script>
+</body>
+</html>
