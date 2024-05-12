@@ -55,7 +55,10 @@
     var optionTempAndRainfall = {
       title: {
         text: 'Mean temperature (°C) and rainfall (mm)',
-        left: 'center'
+        left: 'center',
+		textStyle: {
+		    color: 'rgba(255, 255, 255, 1)' 
+		  }
       },
       tooltip: {
         trigger: 'axis',
@@ -114,7 +117,10 @@
           axisLine: { onZero: true },
           data: years,
           show: true,
-          position: 'top'
+          position: 'top',
+		  axisLabel: {
+		        color: 'white' 
+		      }
         }
         ,
         {
@@ -135,7 +141,10 @@
           formatter: '{value} °C'
           },
           min: 10,
-          max: 15
+          max: 15,
+		  axisLabel: {
+		        color: 'white' 
+		      }
         },
         {
           gridIndex: 1,
@@ -146,7 +155,10 @@
           },
           nameLocation: 'middle',
           min: 0,
-          inverse: true
+          inverse: true,
+		  axisLabel: {
+		        color: 'white' 
+		      }
         }
       ],
       series: [
@@ -227,7 +239,10 @@
       title: {
         text: 'NewYork, USA (1950-2023)\nDifference from from average surface temperature (°C)',
         subText: 'UK Wide',
-        left: 'center'
+        left: 'center',
+		textStyle: {
+		    color: 'rgba(255, 255, 255, 1)' 
+		  }
       },
       tooltip: {
         trigger: 'axis',
@@ -259,7 +274,10 @@
           boundaryGap: false,
           axisLine: { onZero: true },
           data: years,
-          show: true
+          show: true,
+		  axisLabel: {
+		        color: 'white' 
+		      }
         }
       ],
       yAxis: [
@@ -269,7 +287,10 @@
           formatter: '{value}°C'
           },
           min: -1.5,
-          max: 1.5
+          max: 1.5,
+		  axisLabel: {
+		        color: 'white' 
+		      }
         }
       ],
       series: [
