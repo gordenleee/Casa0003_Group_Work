@@ -21,6 +21,22 @@
   margin: 36px auto 0;
 }
 
+.u-section-1 .u-text-4 {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.u-section-1 .u-text-4 a {
+    text-transform: none;
+}
+
+.u-section-1 .u-text-4 a::first-letter {
+  text-transform: uppercase;
+}
+
+
+
 .u-section-1 .u-btn-1 {
   --radius: 50px;
   border-style: solid;
@@ -378,7 +394,7 @@
 
 .u-section-5 .u-text-2 {
   font-size: 1rem;
-  margin: 0 46px 0 0;
+  margin: 50px 46px 0 0;
 }
 
 .u-section-5 .u-text-3 {
