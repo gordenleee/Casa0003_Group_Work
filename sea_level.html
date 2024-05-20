@@ -92,30 +92,30 @@
         });
 
         afterMap.on('load', function() {
-            afterMap.addSource('flood-2020s', {
+            afterMap.addSource('2050s', {
                 type: 'geojson',
-                data: 'data/Sea Level Rise Maps (2020s 100-year Floodplain).geojson'
+                data: 'data/Sea Level Rise Maps (2050s).geojson'
             });
 
             afterMap.addLayer({
-                id: 'flood-2020s-layer',
+                id: '2050s-layer',
                 type: 'fill',
-                source: 'flood-2020s',
+                source: '2050s',
                 paint: {
                     'fill-color': '#1c91ff',
                     'fill-opacity': 0.5
                 }
             });
 
-            afterMap.addSource('flood-2050s', {
+            afterMap.addSource('2080s', {
                 type: 'geojson',
-                data: 'data/Sea Level Rise Maps (2050s 500-year Floodplain).geojson'
+                data: 'data/Sea Level Rise Maps (2080s).geojson'
             });
 
             afterMap.addLayer({
-                id: 'flood-2050s-layer',
+                id: '2080s-layer',
                 type: 'fill',
-                source: 'flood-2050s',
+                source: '2080s',
                 layout: {'visibility': 'none'},
                 paint: {
                     'fill-color': '#0066ff',
@@ -124,15 +124,15 @@
             });
 
             document.getElementById('btn2020s').addEventListener('click', function() {
-                afterMap.setLayoutProperty('flood-2050s-layer', 'visibility', 'none');
-                afterMap.setLayoutProperty('flood-2020s-layer', 'visibility', 'visible');
+                afterMap.setLayoutProperty('2080s-layer', 'visibility', 'none');
+                afterMap.setLayoutProperty('2050s-layer', 'visibility', 'visible');
                 this.classList.add('active');
                 document.getElementById('btn2050s').classList.remove('active');
             });
             
             document.getElementById('btn2050s').addEventListener('click', function() {
-                afterMap.setLayoutProperty('flood-2020s-layer', 'visibility', 'none');
-                afterMap.setLayoutProperty('flood-2050s-layer', 'visibility', 'visible');
+                afterMap.setLayoutProperty('2050s-layer', 'visibility', 'none');
+                afterMap.setLayoutProperty('2080s-layer', 'visibility', 'visible');
                 this.classList.add('active');
                 document.getElementById('btn2020s').classList.remove('active');
             });
